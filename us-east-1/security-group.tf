@@ -1,156 +1,202 @@
-resource "aws_security_group" "bastion_sg" {
-  vpc_id = aws_vpc.my_vpc.id
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
+# Create a sgs
+
+resource "aws_security_group" "bastion-host" {
+  name        = "appserver-SG"
+  description = "Allow inbound traffic from ALB"
+  vpc_id      = aws_vpc.three-tier.id
+  depends_on = [ aws_vpc.three-tier ]
+
+ ingress {
+    description     = "Allow traffic from web layer"
+    from_port       = 22
+    to_port         = 22
+    protocol        = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "bastion-host-server-sg"
+  }
   
 }
-    egress {
-        from_port   = 0
-        to_port     = 0
-        protocol    = "-1"
-        cidr_blocks = ["0.0.0.0/0"]
-    }
-    tags = {
-        Name = "${local.project}-bastion-sg"
-    }
-}
-#alb frontend security group
-resource "aws_security_group" "alb_sg" {
-    name = "alb_sg"
-    description = "Allow HTTP inbound traffic"
-    depends_on = [ aws_vpc.my_vpc ]
-  vpc_id = aws_vpc.my_vpc.id
+
+#  alb-frontend-sg
+
+resource "aws_security_group" "alb-frontend-sg" {
+  name        = "alb-frontend-sg"
+  description = "Allow inbound traffic from ALB"
+  vpc_id      = aws_vpc.three-tier.id
+  depends_on = [ aws_vpc.three-tier ]
+
+ ingress {
+    description     = "http"
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
   ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
+    description     = "https"
+    from_port       = 443
+    to_port         = 443
+    protocol        = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
-    }
-    ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
-    }
-    egress {
-        from_port   = 0
-        to_port     = 0
-        protocol    = "-1"
-        cidr_blocks = ["0.0.0.0/0"]
-    }
-    tags = {
-        Name = "${local.project}-alb-sg"
-    }
+  }
+
+  tags = {
+    Name = "alb-frontend-sg"
+  }
+  
 }
-#frontend security group
-resource "aws_security_group" "frontend_sg" {
-  name = "frontend_sg"
-  description = "Allow HTTP inbound traffic"
-  vpc_id = aws_vpc.my_vpc.id
-  depends_on = [ aws_vpc.my_vpc, aws_security_group.alb_sg ]
-    ingress {
-        from_port   = 80
-        to_port     = 80
-        protocol    = "tcp"
-        cidr_blocks = ["0.0.0.0/0"]
-        }
-        ingress {
-            from_port = 22
-            to_port     = 22
-            protocol    = "tcp"
-            cidr_blocks = ["0.0.0.0/0"]
-        }
-        egress {
-            from_port   = 0
-            to_port     = 0
-            protocol    = "-1"
-            cidr_blocks = ["0.0.0.0/0"]
-        }
-        tags = {
-            Name = "${local.project}-frontend-sg"
-        }
+
+
+#  alb-backend-sg
+
+resource "aws_security_group" "alb-backend-sg" {
+  name        = "alb-backend-sg"
+  description = "Allow inbound traffic ALB"
+  vpc_id      = aws_vpc.three-tier.id
+  depends_on = [ aws_vpc.three-tier ]
+
+ ingress {
+    description     = "http"
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    description     = "https"
+    from_port       = 443
+    to_port         = 443
+    protocol        = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "alb-backend-sg"
+  }
 
 }
-#backend alb security group
-resource "aws_security_group" "backend_alb_sg" {
-    name = "backend_alb_sg"
-    description = "Allow HTTP inbound traffic"
-    depends_on = [ aws_vpc.my_vpc ]
-  vpc_id = aws_vpc.my_vpc.id
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
+
+# frontend server sg
+resource "aws_security_group" "frontend-server-sg" {
+  name        = "frontend-server-sg"
+  description = "Allow inbound traffic "
+  vpc_id      = aws_vpc.three-tier.id
+  depends_on = [ aws_vpc.three-tier,aws_security_group.alb-frontend-sg ]
+
+ ingress {
+    description     = "http"
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
-    }
-    ingress {
-        from_port = 443
-        to_port     = 443
-        protocol    = "tcp"
-        cidr_blocks = ["0.0.0.0/0"]
-    }
-    egress {
-        from_port   = 0
-        to_port     = 0
-        protocol    = "-1"
-        cidr_blocks = ["0.0.0.0/0"]
-    }
-    tags = {
-        Name = "${local.project}-backend-alb-sg"
-    }
+  }
+  ingress {
+    description     = "ssh"
+    from_port       = 22
+    to_port         = 22
+    protocol        = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "frontend-server-sg"
+  }
+
 }
-#backend security group
-resource "aws_security_group" "backend_sg" {
-  name = "backend_sg"
-  description = "Allow HTTP inbound traffic"
-  vpc_id = aws_vpc.my_vpc.id
-  depends_on = [ aws_vpc.my_vpc, aws_security_group.backend_alb_sg ]
-    ingress {
-        from_port   = 80
-        to_port     = 80
-        protocol    = "tcp"
-        cidr_blocks = ["0.0.0.0/0"]
-        }
-        ingress {
-            from_port = 22
-            to_port     = 22
-            protocol    = "tcp"
-            cidr_blocks = ["0.0.0.0/0"]
-        }
-        egress {
-            from_port   = 0
-            to_port     = 0
-            protocol    = "-1"
-            cidr_blocks = ["0.0.0.0/0"]
-        }
-        tags = {
-            Name = "${local.project}-backend-sg"
-        }
-  
+
+
+#  backend-server-sg
+
+resource "aws_security_group" "backend-server-sg" {
+  name        = "backend-server-sg"
+  description = "Allow inbound traffic"
+  vpc_id      = aws_vpc.three-tier.id
+  depends_on = [ aws_vpc.three-tier,aws_security_group.alb-backend-sg ]
+
+ ingress {
+    description     = "http"
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    description     = "ssh"
+    from_port       = 22
+    to_port         = 22
+    protocol        = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "backend-server-sg"
+  }
 }
-#db security group
-resource "aws_security_group" "db_sg" {
-  name = "db_sg"
-  description = "Allow HTTP inbound traffic"
-  vpc_id = aws_vpc.my_vpc.id
-  depends_on = [ aws_vpc.my_vpc ]
-    ingress {
-        from_port   = 3306
-        to_port     = 3306
-        protocol    = "tcp"
-        cidr_blocks = ["0.0.0.0/0"]
-        }
-        egress {
-            from_port   = 0
-            to_port     = 0
-            protocol    = "-1"
-            cidr_blocks = ["0.0.0.0/0"]
-        }
-        tags = {
-            Name = "${local.project}-db-sg"
-        }
+
+
+# database security group
+resource "aws_security_group" "book-rds-sg" {
+  name        = "book-rds-sg"
+  description = "Allow inbound "
+  vpc_id      = aws_vpc.three-tier.id
+  depends_on = [ aws_vpc.three-tier ]
+
+ ingress {
+    description     = "mysql/aroura"
+    from_port       = 3306
+    to_port         = 3306
+    protocol        = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   
+ }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "book-rds-sg"
+  }
+
 }

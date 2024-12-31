@@ -1,165 +1,183 @@
-locals {
-  project = "3tierproject"
+
+#  creating vpc 
+
+resource "aws_vpc" "three-tier" {
+    cidr_block = "10.0.0.0/16"
+    enable_dns_hostnames = true
+    tags = {
+        Name = "3-tietr-vpc"
+    }
 }
 
-# VPC
-resource "aws_vpc" "my_vpc" {
-  cidr_block = "10.0.0.0/16"
-  tags = {
-    Name = "${local.project}-vpc"
-  }
-}
-
-# Public Subnets
-resource "aws_subnet" "public_subnet1" {
-  vpc_id     = aws_vpc.my_vpc.id
-  cidr_block = "10.0.0.0/24"
-  availability_zone = "us-east-1a" # Change as per region
-  tags = {
-    Name = "${local.project}-public-subnet1"
-  }
-}
-
-resource "aws_subnet" "public_subnet2" {
-  vpc_id     = aws_vpc.my_vpc.id
-  cidr_block = "10.0.1.0/24"
-  availability_zone = "us-east-1b"
-  tags = {
-    Name = "${local.project}-public-subnet2"
+resource "aws_subnet" "pub1" {
+    vpc_id = aws_vpc.three-tier.id
+    cidr_block = "10.0.0.0/24"
+    availability_zone = "us-east-1a"
+    map_public_ip_on_launch = true  # for auto asign public ip for subnet
+    tags = {
+    Name = "public-1"
   }
 }
 
-#internet gateway 
-resource "aws_internet_gateway" "igw" {
-  vpc_id = aws_vpc.my_vpc.id
-  tags = {
-    Name = "${local.project}-igw"
+resource "aws_subnet" "pub2" {
+    vpc_id = aws_vpc.three-tier.id
+    cidr_block = "10.0.1.0/24"
+    availability_zone = "us-east-1b"
+    map_public_ip_on_launch = true  # for auto asign public ip for subnet
+    tags = {
+    Name = "public-2"
   }
 }
-# Route Table for Public Subnets
-resource "aws_route_table" "public_rt" {
-  vpc_id = aws_vpc.my_vpc.id
-  tags = {
-    Name = "${local.project}-public-rt"
+
+resource "aws_subnet" "prvt3" {
+    vpc_id = aws_vpc.three-tier.id
+    cidr_block = "10.0.2.0/24"
+    availability_zone = "us-east-1a"
+    tags = {
+    Name = "prvt-3a"
   }
+}
+
+resource "aws_subnet" "prvt4" {
+    vpc_id = aws_vpc.three-tier.id
+    cidr_block = "10.0.3.0/24"
+    availability_zone = "us-east-1b"
+    tags = {
+    Name = "prvt-4b"
+  }
+  
+}
+
+resource "aws_subnet" "prvt5" {
+    vpc_id = aws_vpc.three-tier.id
+    cidr_block = "10.0.4.0/24"
+    availability_zone = "us-east-1a"
+    tags = {
+    Name = "prvt-5a"
+  }
+}
+
+resource "aws_subnet" "prvt6" {
+    vpc_id = aws_vpc.three-tier.id
+    cidr_block = "10.0.5.0/24"
+    availability_zone = "us-east-1b"
+    tags = {
+    Name = "prvt-6b"
+  }
+}
+
+resource "aws_subnet" "prvt7" {
+    vpc_id = aws_vpc.three-tier.id
+    cidr_block = "10.0.6.0/24"
+    availability_zone = "us-east-1a"
+    tags = {
+    Name = "prvt-7a"
+  }
+}
+
+resource "aws_subnet" "prvt8" {
+    vpc_id = aws_vpc.three-tier.id
+    cidr_block = "10.0.7.0/24"
+    availability_zone = "us-east-1b"
+    tags = {
+    Name = "prvt-8b"
+  }
+}
+#  creating internet gateway
+
+resource "aws_internet_gateway" "three-tier-ig" {
+    vpc_id = aws_vpc.three-tier.id
+    tags = {
+        Name = "3-tier-ig"
+    }
+}
+#  creating public route table
+
+resource "aws_route_table" "three-tier-pub-rt" {
+    vpc_id = aws_vpc.three-tier.id
+    tags = {
+      Name = "3-tier-pub-rt"
+    }
   route {
     cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.igw.id
+    gateway_id = aws_internet_gateway.three-tier-ig.id
   }
 }
-#attach public subnet1 to route table
-resource "aws_route_table_association" "public_subnet1_association" {
-  subnet_id      = aws_subnet.public_subnet1.id
-  route_table_id = aws_route_table.public_rt.id
-  
+
+#  attaching pub-1a subnet to public route table
+resource "aws_route_table_association" "public-1a" {
+    route_table_id = aws_route_table.three-tier-pub-rt.id 
+    subnet_id = aws_subnet.pub1.id
 }
-#attach public subnet2 to route table
-resource "aws_route_table_association" "public_subnet2_association" {
-  subnet_id      = aws_subnet.public_subnet2.id
-  route_table_id = aws_route_table.public_rt.id
+
+#  attaching pub-2b subnet to public route table
+resource "aws_route_table_association" "public-2b" {
+    route_table_id = aws_route_table.three-tier-pub-rt.id 
+    subnet_id = aws_subnet.pub2.id
 }
-# Private Subnets
-resource "aws_subnet" "private_subnet1" {
-  vpc_id     = aws_vpc.my_vpc.id
-  cidr_block = "10.0.2.0/24"
-  availability_zone = "us-east-1a"
-  tags = {
-    Name = "${local.project}-private-subnet1"
-  }
-}
-resource "aws_subnet" "private_subnet2" {
-  vpc_id     = aws_vpc.my_vpc.id
-  cidr_block = "10.0.3.0/24"
-  availability_zone = "us-east-1b"
-  tags = {
-    Name = "${local.project}-private-subnet2"
-  }
-  
-}
-resource "aws_subnet" "private_subnet3" {
-  vpc_id     = aws_vpc.my_vpc.id
-  cidr_block = "10.0.4.0/24"
-  availability_zone = "us-east-1a"
-  tags = {
-    Name = "${local.project}-private-subnet3"
-  }
-  
-}
-resource "aws_subnet" "private_subnet4" {
-  vpc_id     = aws_vpc.my_vpc.id
-  cidr_block = "10.0.5.0/24"
-  availability_zone = "us-east-1b"
-  tags = {
-    Name = "${local.project}-private-subnet4"
-  }
-}
-resource "aws_subnet" "private_subnet5" {
-  vpc_id     = aws_vpc.my_vpc.id
-  cidr_block = "10.0.6.0/24"
-  availability_zone = "us-east-1a"
-  tags = {
-    Name = "${local.project}-private-subnet5"
-  }
-  
-}
-resource "aws_subnet" "private_subnet6" {
-  vpc_id     = aws_vpc.my_vpc.id
-  cidr_block = "10.0.7.0/24"
-  availability_zone = "us-east-1b"
-  tags = {
-    Name = "${local.project}-private-subnet6"
-  }
-}
-#elastic ip
+
+
+
+#  creating elastic ip for nat gateway
+
 resource "aws_eip" "eip" {
-}
-#nat gateway
-resource "aws_nat_gateway" "nat_gateway" {
-  allocation_id = aws_eip.eip.id
-  subnet_id     = aws_subnet.public_subnet1.id
-  tags = {
-    Name = "${local.project}-nat-gateway"
-  }
-}
-# Route Table for Private Subnets
-resource "aws_route_table" "private_rt" {
-  vpc_id = aws_vpc.my_vpc.id
-  tags = {
-    Name = "${local.project}-private-rt"
-  }
-  route {
-    cidr_block = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.nat_gateway.id
-  }
-}
-#attach private subnet1 to route table
-resource "aws_route_table_association" "private_subnet1_association" {
-  subnet_id      = aws_subnet.private_subnet1.id
-  route_table_id = aws_route_table.private_rt.id
-}
-#attach private subnet2 to route table
-resource "aws_route_table_association" "private_subnet2_association" {
-  subnet_id      = aws_subnet.private_subnet2.id
-  route_table_id = aws_route_table.private_rt.id
-}
-#attach private subnet3 to route table
-resource "aws_route_table_association" "private_subnet3_association" {
-  subnet_id      = aws_subnet.private_subnet3.id
-  route_table_id = aws_route_table.private_rt.id
-}
-#attach private subnet4 to route table
-resource "aws_route_table_association" "private_subnet4_association" {
-  subnet_id      = aws_subnet.private_subnet4.id
-  route_table_id = aws_route_table.private_rt.id
-}
-#attach private subnet5 to route table
-resource "aws_route_table_association" "private_subnet5_association" {
-  subnet_id      = aws_subnet.private_subnet5.id
-  route_table_id = aws_route_table.private_rt.id
-}
-#attach private subnet6 to route table
-resource "aws_route_table_association" "private_subnet6_association" {
-  subnet_id      = aws_subnet.private_subnet6.id
-  route_table_id = aws_route_table.private_rt.id
+  
 }
 
+#  creating nat gateway
+resource "aws_nat_gateway" "cust-nat" {
+  subnet_id = aws_subnet.pub1.id
+  connectivity_type = "public"
+  allocation_id = aws_eip.eip.id
+  tags = {
+    Name = "3-tier-nat"
+  }
+}
+
+#  creating private route table 
+resource "aws_route_table" "three-tier-prvt-rt" {
+    vpc_id = aws_vpc.three-tier.id
+    tags = {
+      Name = "3-tier-privt-rt"
+    }
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_nat_gateway.cust-nat.id
+  }
+}
+
+#  attaching prvt-3a subnet to private route table
+resource "aws_route_table_association" "prvivate-3a" {
+    route_table_id = aws_route_table.three-tier-prvt-rt.id
+    subnet_id = aws_subnet.prvt3.id
+}
+
+#  attaching prvt-4b subnet to private route table
+resource "aws_route_table_association" "prvivate-4b" {
+    route_table_id = aws_route_table.three-tier-prvt-rt.id
+    subnet_id = aws_subnet.prvt4.id
+}
+
+#  attaching prvt-5a subnet to private route table
+resource "aws_route_table_association" "prvivate-5a" {
+    route_table_id = aws_route_table.three-tier-prvt-rt.id
+    subnet_id = aws_subnet.prvt5.id
+}
+
+#  attaching prvt-6b subnet to private route table
+resource "aws_route_table_association" "prvivate-6b" {
+    route_table_id = aws_route_table.three-tier-prvt-rt.id
+    subnet_id = aws_subnet.prvt6.id
+}
+
+#  attaching prvt-7a subnet to private route table
+resource "aws_route_table_association" "prvivate-7a" {
+    route_table_id = aws_route_table.three-tier-prvt-rt.id
+    subnet_id = aws_subnet.prvt7.id
+}
+
+#  attaching prvt-8b subnet to private route table
+resource "aws_route_table_association" "prvivate-8b" {
+    route_table_id = aws_route_table.three-tier-prvt-rt.id
+    subnet_id = aws_subnet.prvt8.id
+}

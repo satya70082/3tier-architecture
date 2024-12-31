@@ -1,28 +1,35 @@
-resource "aws_lb_target_group" "frontend_tg" {
-  name     = "${local.project}-frontend-tg"
+resource "aws_lb_target_group" "front_end" {
+  name     = "frontend-tg"
   port     = 80
   protocol = "HTTP"
-  vpc_id   = aws_vpc.my_vpc.id
-  depends_on = [ aws_vpc.my_vpc ]
-  
+  vpc_id   = aws_vpc.three-tier.id
+  depends_on = [ aws_vpc.three-tier ]
+
 }
-resource "aws_lb" "frontend_lb" {
-  name = "${local.project}-frontend-lb"
-  internal = false
+
+resource "aws_lb" "front_end" {
+  name               = "frontend-alb"
+  internal           = false
   load_balancer_type = "application"
-  security_groups = [aws_security_group.alb_sg.id]
-  subnets = [aws_subnet.public_subnet1.id, aws_subnet.public_subnet2.id]
+  security_groups    = [aws_security_group.alb-frontend-sg.id]
+  subnets            = [aws_subnet.pub1.id, aws_subnet.pub2.id]
+ 
   tags = {
-    Name = "${local.project}-frontend-lb"
+    Name = "ALB-Frontend"
   }
-  depends_on = [ aws_lb_target_group.frontend_tg ]
+  depends_on = [ aws_lb_target_group.front_end ]
 }
-resource "aws_lb_listener" "frontend_listner" {
-  load_balancer_arn = aws_lb.frontend_lb.arn
+
+resource "aws_lb_listener" "front_end" {
+  load_balancer_arn = aws_lb.front_end.arn
   port              = "80"
   protocol          = "HTTP"
+
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.frontend_tg.arn
+    target_group_arn = aws_lb_target_group.front_end.arn
   }
+  depends_on = [ aws_lb_target_group.front_end ]
 }
+
+
